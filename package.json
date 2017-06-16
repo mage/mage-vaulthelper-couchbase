@@ -1,0 +1,76 @@
+{
+  "name": "mage-vaulthelper-couchbase",
+  "version": "0.0.1",
+  "description": "Helper class to help you deal with accessing a vault's Couchbase backend",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "scripts": {
+    "postinstall": "node -e \"process.exit(require('is-there')('./lib') ? 0 : 1)\" || npm run build",
+    "build": "tsc --project ./src",
+    "prepublish": "run-s test build",
+    "test:lint": " echo 'Check TypeScript code for style issues' &&   tslint --type-check --format codeFrame --project .",
+    "test:cpd": "  echo 'Check the codebase for copy-pasted code' &&  jscpd --config .cpd.yaml",
+    "test:unit": " echo 'Run unit tests' &&                           mocha --compilers ts:ts-node/register -R mocha-reporter ./test/index.ts",
+    "test:coverage": " echo 'Run unit tests and check coverage level' &&  nyc --check-coverage --reporter=text --reporter=html npm run test:unit",
+    "test:git": "  echo 'Make sure all commits are signed' &&         git-signed",
+    "test": "run-s test:*"
+  },
+  "nyc": {
+    "lines": 100,
+    "statements": 100,
+    "functions": 100,
+    "branches": 100,
+    "include": [
+      "src/*.ts",
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "typings"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ],
+    "cache": "true",
+    "instrument": "true",
+    "report-dir": "./coverage-report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mage/mage-vaulthelper-couchbase.git"
+  },
+  "keywords": [
+    "mage",
+    "couchbase"
+  ],
+  "author": "Marc Trudel <mtrudel@wizcorp.jp>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mage/mage-vaulthelper-couchbase/issues"
+  },
+  "homepage": "https://github.com/mage/mage-vaulthelper-couchbase#readme",
+  "devDependencies": {
+    "@types/async": "^2.0.40",
+    "@types/couchbase": "2.1.30",
+    "@types/mocha": "2.2.41",
+    "@types/node": "7.0.21",
+    "couchbase": "2.3.4",
+    "git-message": "1.0.3",
+    "git-signed": "0.0.2",
+    "jscpd": "0.6.11",
+    "mage": "mage/mage#master",
+    "mocha": "3.4.2",
+    "mocha-reporter": "0.0.3",
+    "npm-run-all": "4.0.2",
+    "nyc": "10.3.2",
+    "ts-node": "3.0.4",
+    "tslint": "5.3.2",
+    "typescript": "2.3.3"
+  },
+  "dependencies": {
+    "async": "^2.4.1",
+    "is-there": "^4.4.2"
+  }
+}
