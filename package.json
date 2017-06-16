@@ -1,6 +1,6 @@
 {
   "name": "mage-vaulthelper-couchbase",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Helper class to help you deal with accessing a vault's Couchbase backend",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -52,8 +52,6 @@
   },
   "homepage": "https://github.com/mage/mage-vaulthelper-couchbase#readme",
   "devDependencies": {
-    "@types/async": "^2.0.40",
-    "@types/couchbase": "2.1.30",
     "@types/mocha": "2.2.41",
     "@types/node": "7.0.21",
     "couchbase": "2.3.4",
@@ -70,6 +68,8 @@
     "typescript": "2.3.3"
   },
   "dependencies": {
+    "@types/async": "2.0.40",
+    "@types/couchbase": "2.1.30",
     "async": "^2.4.1",
     "is-there": "^4.4.2"
   }
