@@ -98,9 +98,24 @@ describe('Helper', function () {
     })
 
     it('vault instance is a singleton', function () {
-      assert.equal((<any> helper)._vault, null)
+      assert.strictEqual((<any> helper)._vault, undefined)
       helper.getVault()
-      helper.getVault() // called twice to make sure we get the cached instance
+      assert.notStrictEqual((<any> helper)._vault, undefined)
+      helper.getVault() // make sure we hit the cache at least once
+    })
+  })
+
+  describe('getKeyPrefix', function () {
+    it('returns a key prefix', function () {
+      const keyPrefix = helper.getKeyPrefix()
+      assert.equal(keyPrefix, '')
+    })
+
+    it('key prefix is a singleton', function () {
+      assert.strictEqual((<any> helper)._keyPrefix, undefined)
+      helper.getKeyPrefix()
+      assert.notStrictEqual((<any> helper)._keyPrefix, undefined)
+      helper.getKeyPrefix() // make sure we hit the cache at least once
     })
   })
 

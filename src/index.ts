@@ -237,6 +237,7 @@ export class Helper {
 
   private _vault: ICouchbaseVault
   private _queryPool: QueryPool
+  private _keyPrefix: string
 
   /**
    * Creates an instance of Helper
@@ -280,6 +281,21 @@ export class Helper {
   }
 
   /**
+   * Retrieve the key prefix to access data
+   *
+   * @returns {string}
+   * @memberof Helper
+   */
+  public getKeyPrefix() {
+    if (this._keyPrefix === undefined) {
+      const vault = <any> this.getVault()
+      this._keyPrefix = vault.keyPrefix || ''
+    }
+
+    return this._keyPrefix
+  }
+
+  /**
    * Retrieve the QueryPool instance for this helper instance
    *
    * @returns {QueryPool}
@@ -320,7 +336,7 @@ export class Helper {
       throw new Error('Failed to fetch topic API, or topic API is missing the createKey function!')
     }
 
-    return topicApi.createKey(topic, index)
+    return `${this.getKeyPrefix()}${topicApi.createKey(topic, index)}`
   }
 
   /**
