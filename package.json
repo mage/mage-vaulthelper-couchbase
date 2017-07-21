@@ -1,6 +1,6 @@
 {
   "name": "mage-vaulthelper-couchbase",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Helper class to help you deal with accessing a vault's Couchbase backend",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
