@@ -110,6 +110,25 @@ export interface ICouchbaseUnlockOptions {
 }
 
 /**
+ * Option object to use when running queries
+ *
+ * @export
+ * @interface ICouchbaseQueryOptions
+ */
+export interface ICouchbaseQueryOptions {
+  consistency?: N1qlQuery.Consistency
+  adhoc?: boolean
+}
+
+/**
+ * State object received from a mutation
+ */
+export interface ICouchbaseStateObject {
+  cas: couchbase.Bucket.CAS,
+  token?: any
+}
+
+/**
  * Options for configuring the query pool
  * as well as the query behavior for retriable
  * queries (lock, unlock, etc)
@@ -237,7 +256,7 @@ export class Helper {
 
   private _vault: ICouchbaseVault
   private _queryPool: QueryPool
-  private _keyPrefix: string
+  private _keyPrefix?: string
 
   /**
    * Creates an instance of Helper
@@ -348,8 +367,22 @@ export class Helper {
    * @returns {undefined} void
    * @memberof CouchbaseHelper
    */
-  public async query(queryString: string) {
+  public async query(queryString: string, options?: ICouchbaseQueryOptions | null, state?: ICouchbaseStateObject) {
     const queryObj = N1qlQuery.fromString(queryString)
+
+    if (options) {
+      if (options.consistency !== undefined) {
+        queryObj.consistency(options.consistency)
+      }
+
+      if (options.adhoc !== undefined) {
+        queryObj.adhoc(options.adhoc)
+      }
+    }
+
+    if (state) {
+      (<any> queryObj).consistentWith(state)
+    }
 
     return this.getQueryPool().execute(queryObj)
   }
@@ -433,12 +466,12 @@ export class Helper {
    * @returns {undefined} void
    * @memberof CouchbaseHelper
    */
-  public async set(topic: string, index: archivist.IArchivistIndex, data: any, options?: couchbase.UpsertOptions) {
+  public async set<ICouchbaseStateObject>(topic: string, index: archivist.IArchivistIndex, data: any, options?: couchbase.UpsertOptions) {
     const key = this.createKey(topic, index)
 
     return new Promise((resolve, reject) => {
-      this.getVault().client.upsert(key, data, options || {}, (error) => {
-        promiseRespond(resolve, reject, error, null)
+      this.getVault().client.upsert(key, data, options || {}, (error, state: ICouchbaseStateObject) => {
+        promiseRespond(resolve, reject, error, state)
       })
     })
   }
@@ -456,9 +489,9 @@ export class Helper {
   public async add(topic: string, index: archivist.IArchivistIndex, data: any, options?: couchbase.InsertOptions) {
     const key = this.createKey(topic, index)
 
-    return new Promise((resolve, reject) => {
-      this.getVault().client.insert(key, data, options || {}, (error) => {
-        promiseRespond(resolve, reject, error, null)
+    return new Promise<ICouchbaseStateObject>((resolve, reject) => {
+      this.getVault().client.insert(key, data, options || {}, (error, state: ICouchbaseStateObject) => {
+        promiseRespond(resolve, reject, error, state)
       })
     })
   }
@@ -477,9 +510,9 @@ export class Helper {
   public async replace(topic: string, index: archivist.IArchivistIndex, data: any, options?: couchbase.InsertOptions) {
     const key = this.createKey(topic, index)
 
-    return new Promise((resolve, reject) => {
-      this.getVault().client.replace(key, data, options || {}, (error) => {
-        promiseRespond(resolve, reject, error, null)
+    return new Promise<ICouchbaseStateObject>((resolve, reject) => {
+      this.getVault().client.replace(key, data, options || {}, (error, state: ICouchbaseStateObject) => {
+        promiseRespond(resolve, reject, error, state)
       })
     })
   }
@@ -496,9 +529,9 @@ export class Helper {
   public async remove(topic: string, index: archivist.IArchivistIndex) {
     const key = this.createKey(topic, index)
 
-    return new Promise((resolve, reject) => {
-      this.getVault().client.remove(key, (error) => {
-        promiseRespond(resolve, reject, error, null)
+    return new Promise<ICouchbaseStateObject>((resolve, reject) => {
+      this.getVault().client.remove(key, (error, state: ICouchbaseStateObject) => {
+        promiseRespond(resolve, reject, error, state)
       })
     })
   }

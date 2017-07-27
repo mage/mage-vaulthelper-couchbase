@@ -8,9 +8,18 @@ import {
 } from '../src'
 
 // Couchbase mock
+import {
+  N1qlQuery
+} from 'couchbase'
+
 const couchbase = require('couchbase').Mock
 const cluster = new couchbase.Cluster()
 const client = cluster.openBucket('hi')
+
+client.query = function (...args: any[]) {
+  const callback = args.pop().bind(null, null, [], {})
+  process.nextTick(callback)
+}
 
 // The mock does not have the _name attribute used
 // by the helper to figure out the bucket name
@@ -19,12 +28,6 @@ client._name = 'hi'
 // We override the standard Cluster class; we need
 // to do this so that instanceof calls will resolve properly
 require('couchbase').Cluster = couchbase.Cluster
-
-// query mock
-client.query = function (...args: any[]) {
-  const callback = args.pop().bind(null, null, [], {})
-  process.nextTick(callback)
-}
 
 // Archivist mocks
 mage.core.archivist.getTopicApi = function (topicName: string, _vaultName: string): mage.archivist.ITopicApi | null {
@@ -56,6 +59,11 @@ mage.core.archivist.getPersistentVaults = function () {
       client
     }
   }
+}
+
+function assertState(state: any) {
+  assert(state)
+  assert(state.cas)
 }
 
 describe('Helper', function () {
@@ -169,6 +177,9 @@ describe('Helper', function () {
   })
 
   describe('query', function () {
+    const oldQuery = client.query
+    afterEach(() => client.query = oldQuery)
+
     it('works', async function () {
       const ret = await helper.query('select 1')
 
@@ -177,22 +188,74 @@ describe('Helper', function () {
         meta: {}
       })
     })
+
+    it('Can set consistency', async function () {
+      client.query = function (query: any, ...args: any[]) {
+        assert.equal(query.options.scan_consistency, 'request_plus')
+
+        const callback = args.pop().bind(null, null, [], {})
+        process.nextTick(callback)
+      }
+
+      await helper.query('select 1', {
+        consistency: N1qlQuery.Consistency.REQUEST_PLUS
+      })
+    })
+
+    it('Can set adhoc', async function () {
+      client.query = function (query: any, ...args: any[]) {
+        assert.equal(query.isAdhoc, false)
+
+        const callback = args.pop().bind(null, null, [], {})
+        process.nextTick(callback)
+      }
+
+      await helper.query('select 1', {
+        adhoc: false
+      })
+    })
+
+    it('Can pass a state', async function () {
+      client.query = function (query: any, ...args: any[]) {
+        assert.equal(query.options.scan_consistency, 'at_plus')
+        assert.equal(query.options.scan_vectors.cas, 123)
+
+        const callback = args.pop().bind(null, null, [], {})
+        process.nextTick(callback)
+      }
+
+      await helper.query('select 1', null, {
+        cas: 123
+      })
+    })
   })
 
   describe('add', function () {
-    it('works', async () => await helper.add('fakeTopic', { id: '1' }, 'val'))
+    it('works', async () => {
+      const state = await helper.add('fakeTopic', { id: '1' }, 'val')
+      assertState(state)
+    })
   })
 
   describe('set', function () {
-    it('works', async () => await helper.set('fakeTopic', { id: '1' }, 'val'))
+    it('works', async () => {
+      const state = await helper.set('fakeTopic', { id: '1' }, 'val')
+      assertState(state)
+    })
   })
 
   describe('replace', function () {
-    it('works', async () => await helper.replace('fakeTopic', { id: '1' }, 'val'))
+    it('works', async () => {
+      const state = await helper.replace('fakeTopic', { id: '1' }, 'val')
+      assertState(state)
+    })
   })
 
   describe('remove', function () {
-    it('works', async () => await helper.remove('fakeTopic', { id: '1' }))
+    it('works', async () => {
+      const state = await helper.remove('fakeTopic', { id: '1' })
+      assertState(state)
+    })
   })
 
   describe('incr', function () {
